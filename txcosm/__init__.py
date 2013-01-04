@@ -35,7 +35,7 @@ import json
 import logging
 
 
-version = (0, 0, 1)
+version = (0, 0, 2)
 
 # store the detected XML (EEML) namespace as it is need when search elements
 Namespace = None

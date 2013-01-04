@@ -1,0 +1,4 @@
+include README.md
+include MIT-LICENSE
+recursive-include examples *.py *.cfg
+recursive-include test *.py *.cfg
