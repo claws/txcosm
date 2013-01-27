@@ -17,7 +17,7 @@ from optparse import OptionParser
 import os
 import sys
 from twisted.internet import reactor, defer
-from txcosm.client import Client
+from txcosm.HTTPClient import HTTPClient
 
 
 parser = OptionParser("")
@@ -27,7 +27,7 @@ parser.add_option("-k", "--keyfile", dest="keyfile", default=None, help="Path to
 @defer.inlineCallbacks
 def demo(key):
 
-    client = Client()
+    client = HTTPClient()
 
     try:
         logging.info("Requesting a trigger list")

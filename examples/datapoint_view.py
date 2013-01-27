@@ -18,7 +18,7 @@ from optparse import OptionParser
 import os
 import sys
 from twisted.internet import reactor, defer
-from txcosm.client import Client
+from txcosm.HTTPClient import HTTPClient
 
 
 parser = OptionParser("")
@@ -31,7 +31,7 @@ parser.add_option("-t", "--timestamp", dest="timestamp", default=None, help="The
 @defer.inlineCallbacks
 def demo(key, feed_id=None, datastream_id=None, timestamp=None):
 
-    client = Client()
+    client = HTTPClient()
 
     if feed_id and datastream_id:
 

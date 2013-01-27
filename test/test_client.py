@@ -1,8 +1,10 @@
 #!/usr/bin/env python
 
 #
-# This script provides a sequential, live, test of the client functionality.
-# It is a fairly comprehensive test of the JSON format aspect of the client API.
+# This script provides a sequential, live, test of the HTTP client
+# functionality.
+# It is a fairly comprehensive test of the JSON format aspect of the
+# HTTP client API.
 #
 # It performs a sequence of steps that:
 #  1. Read API key details to check if the supplied key can perform all the following actions
@@ -45,20 +47,14 @@
 
 
 import datetime
+import os
 from optparse import OptionParser
 from twisted.internet import reactor, defer
 import logging
 import traceback
-try:
-    import txcosm
-    import txcosm.client
-except ImportError:
-    # cater for situation where txcosm is not installed into Python distribution
-    import os
-    import sys
-    sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-    import txcosm
-    import txcosm.client
+import txcosm
+from txcosm.HTTPClient import HTTPClient
+
 
 parser = OptionParser("")
 parser.add_option("-k", "--keyfile", dest="keyfile", default=None, help="Path to file containing your Cosm API key")
@@ -73,7 +69,7 @@ def demo(user_api_key):
     required_permissions = [u'get', u'put', u'post', u'delete']
     #required_permissions_available = True
 
-    client = txcosm.client.Client()
+    client = HTTPClient()
 
     ################################################################################
     # Api Keys

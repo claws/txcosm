@@ -20,7 +20,7 @@ from optparse import OptionParser
 import os
 import sys
 from twisted.internet import reactor, defer
-from txcosm.client import Client
+from txcosm.HTTPClient import HTTPClient
 
 
 parser = OptionParser("")
@@ -31,7 +31,7 @@ parser.add_option("-i", "--key", dest="key_id", default=None, help="A specific C
 @defer.inlineCallbacks
 def demo(key, key_id):
 
-    client = Client()
+    client = HTTPClient()
 
     try:
         if key_id:

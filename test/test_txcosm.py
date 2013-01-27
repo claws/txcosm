@@ -265,7 +265,7 @@ TEST_TRIGGERS_LIST_XML = """<?xml version="1.0" encoding="UTF-8"?>
 
 
 TEST_API_KEY_JSON = json.dumps({
-  "key":{
+  "key" :{
     "api_key":"CeWzga_cNja15kjwSVN5x5Mut46qj5akqKPvFxKIec0",
     "label":"sharing key",
     "private_access": True,

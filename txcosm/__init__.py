@@ -35,7 +35,7 @@ import json
 import logging
 
 
-version = (0, 0, 2)
+version = (0, 1, 0)
 
 # store the detected XML (EEML) namespace as it is need when search elements
 Namespace = None
@@ -153,6 +153,8 @@ class DataFields(object):
     Url = u'url'
     Value = u'value'
     Version = u'version'
+    Waypoints = u'waypoint'
+    Waypoints = u'waypoints'
     Website = u'website'
 
 
@@ -335,6 +337,100 @@ class Unit(DataStructure):
             self.label = unicode(unit.text)
 
 
+class Waypoint(DataStructure):
+    """ Models a Waypoint item within a location """
+
+    def __init__(self, **kwargs):
+        self._attributes = [DataFields.At,
+                            DataFields.Latitude,
+                            DataFields.Longitude,
+                            DataFields.Elevation]
+        self.at = None
+        self.lat = None
+        self.lon = None
+        self.ele = None
+
+        # initialise Waypoint attributes to specified values or None.
+        self.fromDict(kwargs)
+
+    def toDict(self):
+        """
+        Return the data structure object as a dict. This method is used as
+        a helper function for JSON serialization/deserialization.
+        """
+        waypointDict = dict()
+        for attribute in self._attributes:
+            attribute_value = getattr(self, attribute, None)
+            if attribute_value:
+                waypointDict[attribute] = unicode(attribute_value)
+        return waypointDict
+
+    def fromDict(self, inDict):
+        """
+        Populate attributes from a dict
+        """
+        for attribute in self._attributes:
+            attribute_value = inDict.get(attribute, None)
+            if attribute_value:
+                setattr(self, attribute, attribute_value)
+
+    def toXml(self, parent=None):
+        """
+        Return the object as an xml ElementTree
+
+        @param parent: The parent element
+        @type parent: etree.Element
+
+        @return: XML representation of the object
+        @rtype: etree.Element
+        """
+        waypoint = etree.Element(DataFields.Waypoint)
+        waypoint.attrib[DataFields.At] = self.at
+        waypoint.text = self.value
+
+        if self.lat:
+            lat = etree.SubElement(waypoint, DataFields.Latitude)
+            lat.text = unicode(self.lat)
+
+        if self.lon:
+            lon = etree.SubElement(waypoint, DataFields.Longitude)
+            lon.text = unicode(self.lon)
+
+        if self.ele:
+            ele = etree.SubElement(waypoint, DataFields.Elevation)
+            ele.text = unicode(self.ele)
+
+        return waypoint
+
+    def fromXml(self, element):
+        """
+        Populate attributes from a XML etree
+
+        @param xml: an xml element tree
+        @type xml: etree.Element
+        """
+        waypoint = element.find(DataFields.Waypoint)
+        if waypoint is not None:
+            at_time = waypoint.attrib.get(DataFields.At, None)
+            if at_time:
+                self.at = unicode(at_time)
+            value = waypoint.text
+            if value:
+                self.value = value
+
+            latitude = waypoint.find(DataFields.Latitude)
+            if latitude is not None:
+                self.lat = float(latitude.text)
+
+            logitude = waypoint.find(DataFields.Longitude)
+            if logitude is not None:
+                self.lon = float(logitude.text)
+
+            elevaltion = waypoint.find(DataFields.Elevation)
+            if elevaltion is not None:
+                self.ele = unicode(elevaltion.text)
+
+
 class Datapoint(DataStructure):
     """ Models a Datapoint item within a datastream """
 
@@ -502,7 +598,8 @@ class Location(DataStructure):
                             DataFields.Exposure,
                             DataFields.Latitude,
                             DataFields.Longitude,
-                            DataFields.Name]
+                            DataFields.Name,
+                            DataFields.Waypoints]
         self.disposition = None
         self.domain = None
         self.ele = None
@@ -510,6 +607,7 @@ class Location(DataStructure):
         self.lat = None
         self.lon = None
         self.name = None
+        self.waypoints = []
 
         # initialise attributes to specified values.
         self.fromDict(kwargs)
@@ -523,7 +621,13 @@ class Location(DataStructure):
         for attribute in self._attributes:
             attribute_value = getattr(self, attribute, None)
             if attribute_value:
-                locationDict[attribute] = attribute_value
+                if attribute == DataFields.Waypoints:
+                    waypoints = attribute_value
+                    locationDict[attribute] = list()
+                    for waypoint in waypoints:
+                        locationDict[attribute].append(waypoint.toDict())
+                else:
+                    locationDict[attribute] = attribute_value
         return locationDict
 
     def fromDict(self, inDict):
@@ -546,8 +650,14 @@ class Location(DataStructure):
                     if attribute_value not in Location.Valid_Exposure_Kinds:
                         raise Exception("Invalid exposure \'%s\' not in %s" % (attribute_value,
                                                                                Location.Valid_Exposure_Kinds))
-
-                setattr(self, attribute, attribute_value)
+                if attribute == DataFields.Waypoints:
+                    waypoints = getattr(self, DataFields.Waypoints)
+                    waypoints = []
+                    for waypointKwargs in attribute_value:
+                        waypoints.append(Waypoint(**waypointKwargs))
+                    setattr(self, attribute, waypoints)
+                else:
+                    setattr(self, attribute, attribute_value)
 
     def toXml(self, parent=None):
         """
@@ -579,6 +689,11 @@ class Location(DataStructure):
         if self.ele:
             ele = etree.SubElement(location, DataFields.Elevation)
             ele.text = unicode(self.ele)
+
+        if self.waypoints:
+            waypoints = etree.SubElement(location, DataFields.Waypoints)
+            for waypoint in self.waypoints:
+                waypoints.append(waypoint.toXml())
 
         return location
 

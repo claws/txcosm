@@ -20,7 +20,7 @@ from optparse import OptionParser
 import os
 import sys
 from twisted.internet import reactor
-from txcosm.client import PAWSClient
+from txcosm.PAWSClient import PAWSClient
 
 
 parser = OptionParser("")
@@ -96,7 +96,6 @@ if __name__ == '__main__':
         resource = "/feeds/%s/datastreams/%s" % (options.feed, options.datastream)
     else:
         resource = "/feeds/%s" % (options.feed)
-
 
     client = PAWSClient(api_key=key)
     d = client.connect()

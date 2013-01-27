@@ -12,7 +12,7 @@ txcosm implements the full v2 Cosm API (Feeds, Datastreams, Datapoints, Triggers
 
 The data structures support encoding and decoding from JSON/XML formats. These structures are useful when building data to send to Cosm and also for processing Cosm data returned from queries.
 
-The txcosm client methods take a data string argument that will be used as the body of the message sent to Cosm. How you generate this body data is up to you. You might choose to manually create the data something like this:
+The txcosm client methods take a data string argument that will form the body of the message sent to Cosm. How you generate this body data is up to you. You might choose to manually create the data something like this:
 
 ```python
 # manually create feed data message body content 
@@ -21,7 +21,7 @@ feed_data = {"title" : "A Temporary Test Feed",
 json_feed_data = json.dumps(feed_data)
 ```
 
-The txcosm package implements many of the data structures used by Cosm requests and responses as Python objects. So the JSON formatted feed data above could also be generated using these txcosm data structure objects like this:
+However, the txcosm package implements many of the data structures used by Cosm requests and responses as Python objects. So the JSON formatted feed data above could also be generated using these txcosm data structure objects like this:
 
 ```python
 # Define a dict of valid data structure keywords for use as
@@ -32,14 +32,23 @@ environment = txcosm.Environment(**env_kwargs)
 json_feed_data = environment.encode()
 ```
 
-Or in a more compact form once you are familiar with a data strcture's valid DataField items:
+Or in a more compact form once you are familiar with a data structure's valid DataField items:
 
 ```python    
 environment = txcosm.Environment(title="A Temporary Test Feed", version="1.0.0")
 json_feed_data = environment.encode()
 ```
 
-txcosm also implements a client that connects to the (Socket Server) PAWS service. This allows long running, persistent, connections to be made to the Cosm service. This type of client is useful for applications which require realtime updates on change of status. Realtime feed updates are available through the subscription feature exposed in the beta PAWS service.
+Requests to Cosm are automatically timed out after 10 seconds. You can change the timeout value as follows:
+```python
+from txcosm.HTTPClient import HTTPClient
+client = HTTPClient()
+client.request_timeout = 5.0
+```
+Client functions will return None when a timeout or error is encountered. You should check the returned object for None before assuming that the function call was successful.
+For example if you were updating a datastream you would call the ```client.update_datapoints``` function and you would then check for None and if None was returned then you should retry the update.
+
+In addition to the standard HTTP client, txcosm also implements a client that connects to the (Socket Server) PAWS service. This allows long running, persistent, connections to be made to the Cosm service. This type of client is useful for applications which require realtime updates on change of status. Realtime feed updates are available through the subscription feature exposed in the beta PAWS service.
 
 ## Dependencies
 
@@ -103,20 +112,19 @@ List Cosm feeds visible to the API key supplied:
 # being requested.
 
 from twisted.internet import reactor, defer
-import txcosm.client
+from txcosm.HTTPClient import HTTPClient
 
 # Paste your Cosm API key here
 API_KEY = ""
 
 @defer.inlineCallbacks
 def demo():
-    client = txcosm.client.Client(api_key=API_KEY)
-    try:
-        feed_list = yield client.list_feeds(parameters={'status' : 'live', 'content' : 'summary'})
+    client = HTTPClient(api_key=API_KEY)
+    feed_list = yield client.list_feeds(parameters={'status' : 'live', 'content' : 'summary'})
+    if feed_list:
         print "Received feed list content:\n%s\n" % feed_list
-    except Exception, ex:
-        print "Error listing visible feeds: %s" % str(ex)
-    
+    else:
+        print "Error listing visible feeds"
     reactor.callLater(0.1, reactor.stop)
     defer.returnValue(True) 
 
@@ -137,22 +145,20 @@ Create a new feed:
 
 from twisted.internet import reactor, defer
 import txcosm
-import txcosm.client
+from txcosm.HTTPClient import HTTPClient
 
 # Paste your Cosm API key here
 API_KEY = ""
 
 @defer.inlineCallbacks
 def demo():
-    
-    client = txcosm.client.Client()
-    try:
-        environment = txcosm.Environment(title="A Temporary Test Feed", version="1.0.0")
-        new_feed_id = yield client.create_feed(api_key=API_KEY, data=environment.encode())
+    client = HTTPClient()
+    environment = txcosm.Environment(title="A Temporary Test Feed", version="1.0.0")
+    new_feed_id = yield client.create_feed(api_key=API_KEY, data=environment.encode())
+    if new_feed_id:
         print "Created new feed with id: %s" % new_feed_id
-    except Exception, ex:
-        print "Error creating new feed: %s" % str(ex)
-    
+    else:
+        print "Error creating new feed"
     reactor.callLater(0.1, reactor.stop)
     defer.returnValue(True) 
     
@@ -175,7 +181,7 @@ Update a feed:
 
 from twisted.internet import reactor
 import txcosm
-import txcosm.client
+from txcosm.HTTPClient import HTTPClient
 
 # Paste your Cosm API key here
 API_KEY = ""
@@ -208,15 +214,20 @@ feed_data = """<?xml version="1.0" encoding="UTF-8"?>
   </environment>
 </eeml>"""
 
+@defer.inlineCallbacks
+def demo():
+    client = HTTPClient(api_key=API_KEY, feed_id=FEED_ID)
+    result = client.update_feed(format=txcosm.DataFormats.XML, data=feed_data)
+    if result:
+        print "Feed updated"
+    else:
+        print "Error updating feed"
+    reactor.callLater(0.1, reactor.stop)
+    defer.returnValue(True)
+
 
 if __name__ == "__main__":
-    cosmClient = txcosm.client.Client(api_key=API_KEY, feed_id=FEED_ID)
-
-    d = cosmClient.update_feed(format=txcosm.DataFormats.XML, data=feed_data)
-    d.addCallback(lambda result: print "Feed updated successfully:\n%s\n" % result)
-    d.addErrback(lambda reason: print "Error updating feed: %s" % str(reason))
-    d.addCallback(reactor.stop)
-
+    reactor.callWhenRunning(demo)
     reactor.run()      
 ```
 
@@ -231,7 +242,7 @@ Read a feed:
 # method.
 
 from twisted.internet import reactor, defer
-import txcosm.client
+from txcosm.HTTPClient import HTTPClient
 
 # Paste your Cosm API key here
 API_KEY = ""
@@ -241,13 +252,12 @@ FEED_ID = ""
 
 @defer.inlineCallbacks
 def demo():
-    client = txcosm.client.Client(api_key=API_KEY, feed_id=FEED_ID)
-    try:
-        feed = yield client.read_feed(parameters={'datastream':'temperature'})
+    client = HTTPClient(api_key=API_KEY, feed_id=FEED_ID)
+    feed = yield client.read_feed(parameters={'datastream':'temperature'})
+    if feed:
         print "Received feed content:\n%s\n" % feed
-    except Exception, ex:
-        print "Error reading feed: %s" % str(ex)
-    
+    else:
+        print "Error reading feed"
     reactor.callLater(0.1, reactor.stop)
     defer.returnValue(True) 
     
@@ -261,10 +271,12 @@ Delete a feed:
 ```python
 #!/usr/bin/env python 
 # This example demonstrates the ability to delete a feed.
+#
 # WARNING: This will REALLY delete the feed identifier listed. Make sure it is only a test feed. 
+#
 
 from twisted.internet import reactor, defer
-import txcosm.client
+from txcosm.HTTPClient import HTTPClient
 
 # Paste your Cosm API key here
 API_KEY = ""
@@ -274,13 +286,12 @@ FEED_ID = ""
 
 @defer.inlineCallbacks
 def demo():
-    client = txcosm.client.Client()
-    try:
-        feed_delete_status = yield client.delete_feed(api_key=API_KEY, feed_id=FEED_ID)
+    client = HTTPClient()
+    feed_delete_status = yield client.delete_feed(api_key=API_KEY, feed_id=FEED_ID)
+    if feed_delete_status:
         print "Deleted feed: %s" % feed_delete_status
-    except Exception, ex:
+    else:
         print "Error deleting feed: %s" % str(ex)
-    
     reactor.callLater(0.1, reactor.stop)
     defer.returnValue(True) 
     
@@ -298,7 +309,7 @@ Use the PAWS API to subscribe to a feed or datastream and receive updates whenev
 
 from twisted.internet import reactor
 import txcosm
-import txcosm.client
+from txcosm.PAWSClient import PAWSClient
 
 # Paste your Cosm API key here
 API_KEY = ""
@@ -318,7 +329,6 @@ def updateHandler(dataStructure):
     """
     Handle a txcosm data structure object generated as a result of a
     subscription update message received from Cosm.
-
     The data structure returned will vary depending on the resource subscribed to.
     If a datastream is specified the returned data structure will be a txcosm.Datastream
     object. If just a feed is specified then the returned data structure will be a
@@ -329,7 +339,6 @@ def updateHandler(dataStructure):
 
 def do_subscribe(connected, client, resource):
     """ Subscribe to the specified resource if the connection is established """
-
     if connected:
         print "Connected to PAWS service"
         
@@ -340,7 +349,6 @@ def do_subscribe(connected, client, resource):
         token, d = client.subscribe(resource, updateHandler)
         print "Subscription token is: %s" % token
         d.addCallback(handleSubscribeResponse)
-
     else:
         print "Connection failed"
         reactor.callLater(0.1, reactor.stop)
@@ -353,7 +361,7 @@ if __name__ == '__main__':
     else:
         resource = "/feeds/%s" % (FEED_ID)
     
-    client = txcosm.client.PAWSClient(api_key=API_KEY)
+    client = PAWSClient(api_key=API_KEY)
     d = client.connect()
     d.addCallback(do_subscribe, client, resource)
     reactor.run()        
@@ -371,12 +379,14 @@ Example use case scenario:
 # support encoding to JSON (default) and XML (EEML).
 #
 # In this example the CurrentCost sensor object is derived from the
-# separate txcurrentcost package. If you want to run this script
+# separate txcurrentcost package. A shameless plug for my txcurrentcost
+# package no doubt, but this is why I wrote txcosm. If you want to run this script
 # you would need to install that package.
 #
 
 from twisted.internet import reactor
 import txcosm
+from txcosm.HTTPClient import HTTPClient
 import txcurrentcost.monitor
 
 # Paste your Cosm API key here
@@ -409,7 +419,7 @@ class Monitor(object):
     def __init__(self, config):
         self.temperature_datastream_id = "temperature"
         self.energy_datastream_id = "energy"
-        self.cosmClient = txcosm.client.Client(api_key=API_KEY, feed_id=FEED_ID)
+        self.cosmClient = HTTPClient(api_key=API_KEY, feed_id=FEED_ID)
         currentCostMonitorConfig = txcurrentcost.monitor.MonitorConfig(CurrentCostMonitorConfigFile)
         self.sensor = txcurrentcost.monior.Monitor(currentCostMonitorConfig,
                                                    self.handleCurrentCostPeriodicUpdateData)

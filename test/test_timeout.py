@@ -1,16 +1,16 @@
 #!/usr/bin/env python
 
 """
-Lists feed visible to the supplied Cosm user API key
+Thie script is used to test the timeout functionality.
+
+It sets a ridiculously low value for the timeout to force a request
+timeout.
 
 To use this script you must create a text file containing your API key
-and pass it to this script using the --keyfile argument as follows:
+and pass it to this script using the -k or --keyfile argument as follows:
 
-List all feeds visible to supplied key:
-$ feed_view.py --keyfile=/path/to/apikey/file
-
-List a particular feed
-$ feed_view.py --keyfile=path/to/apikey/file --feed=XXX
+List all keys visible to supplied key:
+$ test_timeout.py --keyfile=/path/to/apikey/file
 
 txcosm must be installed or visible on the PYTHONPATH.
 """
@@ -25,25 +25,25 @@ from txcosm.HTTPClient import HTTPClient
 
 parser = OptionParser("")
 parser.add_option("-k", "--keyfile", dest="keyfile", default=None, help="Path to file containing your Cosm API key")
-parser.add_option("-f", "--feed", dest="feed_id", default=None, help="A specific Cosm feed id to list")
 
 
 @defer.inlineCallbacks
-def demo(key, feed_id):
+def demo(key):
 
     client = HTTPClient()
 
-    try:
-        if feed_id:
-            # request feed details for the supplied identifier only
-            logging.info("Requesting feed details for feed: %s" % feed_id)
-            dataStructure = yield client.read_feed(api_key=key, feed_id=feed_id)
-        else:
-            # request feed details for all feeds visible to the key supplied
-            logging.info("Requesting a feed listing")
-            dataStructure = yield client.list_feeds(api_key=key, parameters={'per_page': 5, 'status': 'live'})
+    # set a REALLY low value to force timeout functionality
+    client.request_timeout = 0.2
 
-        logging.info("Received response from Cosm:\n%s\n" % dataStructure)
+    try:
+        # request key details for all keys visible to the key supplied
+        logging.info("Requesting a key listing")
+        dataStructure = yield client.list_api_keys(api_key=key)
+
+        if dataStructure:
+            logging.info("Received response from Cosm:\n%s\n" % dataStructure)
+        else:
+            logging.error("Unable to retrieve key list")
 
         reactor.callLater(0.1, reactor.stop)
         defer.returnValue(True)
@@ -74,5 +74,5 @@ if __name__ == '__main__':
     key = fd.read().strip()
     fd.close()
 
-    reactor.callWhenRunning(demo, key, options.feed_id)
+    reactor.callWhenRunning(demo, key, options.key_id)
     reactor.run()
