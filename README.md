@@ -6,7 +6,7 @@ txcosm is a Python Twisted package implementing the v2 Cosm ([API](https://cosm.
 
 ![PyPi version](https://pypip.in/v/txcosm/badge.png) &nbsp;&nbsp; ![PyPi version](https://pypip.in/d/txcosm/badge.png)
 
-## Background 
+## Background
 Cosm was once known as Pachube. This package originated as _txpachube_. It has been renamed to mirror the new site name and development continues in this repository.
 
 ## Details
@@ -17,7 +17,7 @@ The data structures support encoding and decoding from JSON/XML formats. These s
 The txcosm client methods take a data string argument that will form the body of the message sent to Cosm. How you generate this body data is up to you. You might choose to manually create the data something like this:
 
 ```python
-# manually create feed data message body content 
+# manually create feed data message body content
 feed_data = {"title" : "A Temporary Test Feed",
              "version" : "1.0.0"}
 json_feed_data = json.dumps(feed_data)
@@ -36,7 +36,7 @@ json_feed_data = environment.encode()
 
 Or in a more compact form once you are familiar with a data structure's valid DataField items:
 
-```python    
+```python
 environment = txcosm.Environment(title="A Temporary Test Feed", version="1.0.0")
 json_feed_data = environment.encode()
 ```
@@ -97,14 +97,14 @@ $ python
 
 All examples require you to have a Cosm account and an appropriately configured (permissions set to create, update, read, delete) Cosm API key.
 
-Example scripts can be found in the examples directory. 
+Example scripts can be found in the examples directory.
 
-Below are some simple examples to give a quick glimpse of how to use this package. 
+Below are some simple examples to give a quick glimpse of how to use this package.
 
 List Cosm feeds visible to the API key supplied:
 
 ```python
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # This example demonstrates a request for feeds visible to the
 # supplied API key. It initialises the Client object with a
 # default API key that will be used if no api_key argument is
@@ -128,7 +128,7 @@ def demo():
     else:
         print "Error listing visible feeds"
     reactor.callLater(0.1, reactor.stop)
-    defer.returnValue(True) 
+    defer.returnValue(True)
 
 if __name__ == "__main__":
     reactor.callWhenRunning(demo)
@@ -138,9 +138,9 @@ if __name__ == "__main__":
 Create a new feed:
 
 ```python
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # This example demonstrates the ability to create new feeds. It also
-# shows an API key being passed to the create_feed method directly 
+# shows an API key being passed to the create_feed method directly
 # as no default key was passed to the Client object initialiser.
 # No format needs to be specified because json is the default format
 # used.
@@ -162,8 +162,8 @@ def demo():
     else:
         print "Error creating new feed"
     reactor.callLater(0.1, reactor.stop)
-    defer.returnValue(True) 
-    
+    defer.returnValue(True)
+
 
 if __name__ == "__main__":
     reactor.callWhenRunning(demo)
@@ -173,12 +173,12 @@ if __name__ == "__main__":
 Update a feed:
 
 ```python
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # This example show how a feed can be updated using your own generated
-# data, in this case XML data. 
-# The Client object has been initialised with an API key and a feed id 
-# so they don't need to be passed to the update_feed method. The format 
-# argument is JSON by default so it must be explicitly set as this 
+# data, in this case XML data.
+# The Client object has been initialised with an API key and a feed id
+# so they don't need to be passed to the update_feed method. The format
+# argument is JSON by default so it must be explicitly set as this
 # example is using XML.
 
 from twisted.internet import reactor
@@ -230,13 +230,13 @@ def demo():
 
 if __name__ == "__main__":
     reactor.callWhenRunning(demo)
-    reactor.run()      
+    reactor.run()
 ```
 
 Read a feed:
 
 ```python
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # This example demonstrates a request for feed data and uses
 # additional parameters to restrict the datastreams returned.
 # It initialises the Client object with a default API key and
@@ -261,8 +261,8 @@ def demo():
     else:
         print "Error reading feed"
     reactor.callLater(0.1, reactor.stop)
-    defer.returnValue(True) 
-    
+    defer.returnValue(True)
+
 if __name__ == "__main__":
     reactor.callWhenRunning(demo)
     reactor.run()
@@ -271,10 +271,10 @@ if __name__ == "__main__":
 Delete a feed:
 
 ```python
-#!/usr/bin/env python 
+#!/usr/bin/env python
 # This example demonstrates the ability to delete a feed.
 #
-# WARNING: This will REALLY delete the feed identifier listed. Make sure it is only a test feed. 
+# WARNING: This will REALLY delete the feed identifier listed. Make sure it is only a test feed.
 #
 
 from twisted.internet import reactor, defer
@@ -295,8 +295,8 @@ def demo():
     else:
         print "Error deleting feed: %s" % str(ex)
     reactor.callLater(0.1, reactor.stop)
-    defer.returnValue(True) 
-    
+    defer.returnValue(True)
+
 
 if __name__ == "__main__":
     reactor.callWhenRunning(demo)
@@ -307,7 +307,7 @@ if __name__ == "__main__":
 Use the PAWS API to subscribe to a feed or datastream and receive updates whenever the feed/datastream value changes:
 
 ```python
-#!/usr/bin/env python 
+#!/usr/bin/env python
 
 from twisted.internet import reactor
 import txcosm
@@ -319,10 +319,10 @@ API_KEY = ""
 # Paste the feed identifier you wish to monitor here
 FEED_ID = ""
 
-# Paste a datastream identifier from the feed here if you only want to 
+# Paste a datastream identifier from the feed here if you only want to
 # monitor a particular datastream instead of the whole feed.
 DATASTREAM_ID = ""
- 
+
 #
 # Set up callback handlers
 #
@@ -343,10 +343,10 @@ def do_subscribe(connected, client, resource):
     """ Subscribe to the specified resource if the connection is established """
     if connected:
         print "Connected to PAWS service"
-        
+
         def handleSubscribeResponse(status):
             print "Subscribe response status: %s" % status
-        
+
         print "Subscribing for updates to: %s" % resource
         token, d = client.subscribe(resource, updateHandler)
         print "Subscription token is: %s" % token
@@ -362,11 +362,11 @@ if __name__ == '__main__':
         resource = "/feeds/%s/datastreams/%s" % (FEED_ID, DATASTREAM_ID)
     else:
         resource = "/feeds/%s" % (FEED_ID)
-    
+
     client = PAWSClient(api_key=API_KEY)
     d = client.connect()
     d.addCallback(do_subscribe, client, resource)
-    reactor.run()        
+    reactor.run()
 ```
 
 Example use case scenario:
@@ -425,15 +425,15 @@ class Monitor(object):
         currentCostMonitorConfig = txcurrentcost.monitor.MonitorConfig(CurrentCostMonitorConfigFile)
         self.sensor = txcurrentcost.monior.Monitor(currentCostMonitorConfig,
                                                    self.handleCurrentCostPeriodicUpdateData)
-        
+
     def start(self):
         """ Start sensor """
         self.sensor.start()
-        
+
     def stop(self):
         """ Stop the sensor """
         self.sensor.stop()
-        
+
     def def handleCurrentCostPeriodicUpdateData(self, timestamp, temperature, watts_on_channels):
         """ Handle latest sensor periodic update """
 
@@ -452,8 +452,8 @@ class Monitor(object):
 if __name__ == "__main__":
     monitor = Monitor()
     reactor.callWhenRunning(monitor.start)
-    reactor.run()        
+    reactor.run()
 ```
 
 
-
+[![Analytics](https://ga-beacon.appspot.com/UA-29867375-2/txcosm/readme?pixel)](https://github.com/claws/txcosm)
