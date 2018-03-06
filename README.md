@@ -4,7 +4,7 @@
 ## Introduction
 txcosm is a Python Twisted package implementing the v2 Cosm ([API](https://cosm.com/docs/v2/>). Use txcosm to integrate non blocking access to the Cosm API into your Python Twisted application.
 
-![PyPi version](https://pypip.in/v/txcosm/badge.png) &nbsp;&nbsp; ![PyPi version](https://pypip.in/d/txcosm/badge.png)
+![PyPi version](https://img.shields.io/pypi/v/txcosm.svg) &nbsp;&nbsp; ![PyPi version](https://img.shields.io/pypi/dm/txcosm.svg)
 
 ## Background
 Cosm was once known as Pachube. This package originated as _txpachube_. It has been renamed to mirror the new site name and development continues in this repository.
